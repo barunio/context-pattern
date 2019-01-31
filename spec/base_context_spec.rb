@@ -1,5 +1,13 @@
 require 'context-pattern'
 
+class TestDecorator
+  attr_accessor :decorator_val
+
+  def initialize(str, other_str = '')
+    self.decorator_val = "#{str}..#{other_str}"
+  end
+end
+
 class TestContext < Context::BaseContext
   view_helpers :method1,
                :method2
@@ -18,6 +26,14 @@ class TestContext < Context::BaseContext
     'method3'
   end
 
+  def bowie
+    'ziggy'
+  end
+
+  def rolling
+    'rolling'
+  end
+
   protected
 
   attr_accessor :bar1
@@ -34,7 +50,16 @@ class TestContext < Context::BaseContext
 end
 
 class TestContext2 < Context::BaseContext
+  decorate :bowie, decorator: TestDecorator
+  decorate :rolling, decorator: TestDecorator, args: [:stones]
+
   attr_accessor :blah
+
+  private
+
+  def stones
+    'stones'
+  end
 end
 
 class TestContext3 < Context::BaseContext
@@ -112,6 +137,37 @@ describe Context::BaseContext do
     end
   end
 
+  describe '.decorate is used in conjunction with `wrap` to provide an '\
+  'explicit interface for decorating method values retrieved from earlier in '\
+  'the context chain' do
+    let(:instance) { TestContext.new }
+    let(:instance2) { TestContext2.wrap(instance) }
+    let(:instance3) { TestContext3.wrap(instance2) }
+
+    it 'works when there are no arguments' do
+      expect(instance.bowie).to eq('ziggy')
+
+      decorated = instance2.bowie
+      expect(decorated).to be_a(TestDecorator)
+      expect(decorated.decorator_val).to eq('ziggy..')
+    end
+
+    it 'works when there are arguments supplied to the decorator, with the '\
+    'arguments coming from method evaluations in the context' do
+      expect(instance.rolling).to eq('rolling')
+
+      decorated = instance2.rolling
+      expect(decorated).to be_a(TestDecorator)
+      expect(decorated.decorator_val).to eq('rolling..stones')
+    end
+
+    it 'cascades decorated values to contexts down the chain' do
+      cascaded_decorated = instance3.rolling
+      expect(cascaded_decorated).to be_a(TestDecorator)
+      expect(cascaded_decorated.decorator_val).to eq('rolling..stones')
+    end
+  end
+
   describe '#context_class_chain' do
     let(:instance) { TestContext.new(foo: 1) }
     let(:instance2) { TestContext2.wrap(instance) }
@@ -162,11 +218,13 @@ describe Context::BaseContext do
     'context name as values' do
       expect(instance.context_method_mapping).to eq(
         {
+          :bowie => 'TestContext',
           :foo => 'TestContext',
           :foo= => 'TestContext',
           :method1 => 'TestContext',
           :method2 => 'TestContext',
-          :method3 => 'TestContext'
+          :method3 => 'TestContext',
+          :rolling => 'TestContext',
         }
       )
     end
@@ -177,11 +235,13 @@ describe Context::BaseContext do
         {
           :blah => 'TestContext2',
           :blah= => 'TestContext2',
+          :bowie => 'TestContext2',
           :foo => 'TestContext',
           :foo= => 'TestContext',
           :method1 => 'TestContext',
           :method2 => 'TestContext',
-          :method3 => 'TestContext'
+          :method3 => 'TestContext',
+          :rolling => 'TestContext2'
         }
       )
     end
@@ -192,11 +252,13 @@ describe Context::BaseContext do
           :alpha => 'TestContext3',
           :blah => 'TestContext2',
           :blah= => 'TestContext2',
+          :bowie => 'TestContext2',
           :foo => 'TestContext',
           :foo= => 'TestContext',
           :method1 => 'TestContext',
           :method2 => 'TestContext',
-          :method3 => 'TestContext'
+          :method3 => 'TestContext',
+          :rolling => 'TestContext2'
         }
       )
     end
@@ -213,6 +275,11 @@ describe Context::BaseContext do
       expect(instance3.whereis(:method2)).to eq('TestContext')
       expect(instance3.whereis('blah')).to eq('TestContext2')
       expect(instance3.whereis('alpha')).to eq('TestContext3')
+    end
+
+    it 'handles decorated methods, showing the class that most recently '\
+    'did the decoration' do
+      expect(instance3.whereis(:bowie)).to eq('TestContext2')
     end
 
     it 'returns nil if the method is not a public method' do

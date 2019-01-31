@@ -9,6 +9,15 @@ module Context
     class << self
       include Memoizer
 
+      def decorate(ancestor_context_method, decorator:, args: [])
+        define_method(ancestor_context_method) do
+          decorator.new(
+            @parent_context.public_send(ancestor_context_method),
+            *(args.map { |arg| instance_eval(arg.to_s) })
+          )
+        end
+      end
+
       def has_view_helper?(method_name)
         @view_helpers.is_a?(Array) && @view_helpers.include?(method_name.to_sym)
       end
