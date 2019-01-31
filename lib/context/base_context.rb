@@ -45,6 +45,12 @@ module Context
           @parent_context.has_view_helper?(method_name))
     end
 
+    def context_method_mapping
+      @context_method_mapping ||=
+        (@parent_context.try(:context_method_mapping) || {})
+          .merge(get_context_method_mapping)
+    end
+
     def method_missing(method_name, *args, &block)
       if @parent_context
         @parent_context.public_send(method_name, *args, &block)
@@ -55,6 +61,14 @@ module Context
 
     def respond_to_missing?(method_name, include_private = false)
       @parent_context&.respond_to?(method_name, include_private)
+    end
+
+    private
+
+    def get_context_method_mapping
+      self.class.public_instance_methods(false).reduce({}) do |hash, method_name|
+        hash.merge!(method_name => self.class.name)
+      end
     end
   end
 end

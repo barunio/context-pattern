@@ -38,6 +38,9 @@ class TestContext2 < Context::BaseContext
 end
 
 class TestContext3 < Context::BaseContext
+  def alpha
+    'alpha'
+  end
 end
 
 describe Context::BaseContext do
@@ -147,6 +150,55 @@ describe Context::BaseContext do
     it 'is true if a grand-wrapped context has a declared view helper' do
       expect(instance3.has_view_helper?(:method1)).to eq(true)
       expect(instance3.has_view_helper?('method2')).to eq(true)
+    end
+  end
+
+  describe '#context_method_mapping' do
+    let(:instance) { TestContext.new }
+    let(:instance2) { TestContext2.wrap(instance) }
+    let(:instance3) { TestContext3.wrap(instance2) }
+
+    it 'returns a hash of public instance method names as keys and the '\
+    'context name as values' do
+      expect(instance.context_method_mapping).to eq(
+        {
+          :foo => 'TestContext',
+          :foo= => 'TestContext',
+          :method1 => 'TestContext',
+          :method2 => 'TestContext',
+          :method3 => 'TestContext'
+        }
+      )
+    end
+
+    it 'includes public instance methods from a wrapped context, with that '\
+    'wrapped context class name as the associated value for those methods' do
+      expect(instance2.context_method_mapping).to eq(
+        {
+          :blah => 'TestContext2',
+          :blah= => 'TestContext2',
+          :foo => 'TestContext',
+          :foo= => 'TestContext',
+          :method1 => 'TestContext',
+          :method2 => 'TestContext',
+          :method3 => 'TestContext'
+        }
+      )
+    end
+
+    it 'returns the expected values for multiple-wrapped contexts' do
+      expect(instance3.context_method_mapping).to eq(
+        {
+          :alpha => 'TestContext3',
+          :blah => 'TestContext2',
+          :blah= => 'TestContext2',
+          :foo => 'TestContext',
+          :foo= => 'TestContext',
+          :method1 => 'TestContext',
+          :method2 => 'TestContext',
+          :method3 => 'TestContext'
+        }
+      )
     end
   end
 
