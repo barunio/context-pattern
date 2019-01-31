@@ -34,6 +34,11 @@ module Context
       end
     end
 
+    def context_class_chain
+      @context_class_chain ||=
+        ((@parent_context.try(:context_class_chain) || []) + [self.class.name])
+    end
+
     def has_view_helper?(method_name)
       self.class.has_view_helper?(method_name) ||
         (@parent_context.present? &&

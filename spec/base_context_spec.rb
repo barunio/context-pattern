@@ -109,6 +109,21 @@ describe Context::BaseContext do
     end
   end
 
+  describe '#context_class_chain' do
+    let(:instance) { TestContext.new(foo: 1) }
+    let(:instance2) { TestContext2.wrap(instance) }
+    let(:instance3) { TestContext3.wrap(instance2) }
+
+    it 'returns an array of all chained context class names in the order '\
+    'they were wrapped' do
+      expect(instance.context_class_chain).to eq(['TestContext'])
+      expect(instance2.context_class_chain)
+        .to eq(['TestContext', 'TestContext2'])
+      expect(instance3.context_class_chain)
+        .to eq(['TestContext', 'TestContext2', 'TestContext3'])
+    end
+  end
+
   describe '#has_view_helper?' do
     let(:instance) { TestContext.new(foo: 1) }
     let(:instance2) { TestContext2.wrap(instance) }
