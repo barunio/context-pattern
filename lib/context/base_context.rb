@@ -2,6 +2,18 @@ require 'rails'
 require 'memoizer'
 
 module Context
+  class MethodOverrideError < ::StandardError
+    def initialize(context_class, method_names)
+      @context_class = context_class
+      @method_names = method_names
+    end
+
+    def message
+      "#{@context_class.name} can not overwrite methods already defined in "\
+      "the context chain: #{@method_names}"
+    end
+  end
+
   class BaseContext
     include Memoizer
     delegate :link_to, to: 'ActionController::Base.helpers'
@@ -17,7 +29,18 @@ module Context
           )
         end
 
-        public_send(:memoize, ancestor_context_method) if memoize
+        @decorated_methods ||= []
+        @decorated_methods << ancestor_context_method.to_sym
+
+        if memoize
+          public_send(:memoize, ancestor_context_method)
+          @decorated_methods << "_unmemoized_#{ancestor_context_method}".to_sym
+        end
+      end
+
+      def is_decorated?(method_name)
+        @decorated_methods.is_a?(Array) &&
+          @decorated_methods.include?(method_name.to_sym)
       end
 
       def has_view_helper?(method_name)
@@ -30,6 +53,15 @@ module Context
       end
 
       def wrap(parent_context, **args)
+        existing_public_methods = parent_context.context_method_mapping.keys
+        new_public_methods = public_instance_methods(false)
+        redefined_methods = existing_public_methods & new_public_methods
+        redefined_methods.reject! { |method| is_decorated?(method) }
+
+        unless redefined_methods.empty?
+          raise Context::MethodOverrideError.new(self, redefined_methods)
+        end
+
         new(parent_context: parent_context, **args)
       end
     end

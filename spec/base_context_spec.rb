@@ -140,6 +140,41 @@ describe Context::BaseContext do
       expect(contextA.foo).to eq(1)
       expect(contextB.foo).to eq(1)
     end
+
+    it 'raises a MethodOverrideError if a context attempts to overwrite a '\
+    'public instance method defined in a parent context' do
+      contextA = TestContext.new
+      other_context_class = Class.new(Context::BaseContext) do
+        def self.name
+          'BadContext'
+        end
+
+        def method1
+          'overwrite'
+        end
+      end
+
+      expect { other_context_class.wrap(contextA) }.to raise_error(
+        Context::MethodOverrideError,
+        'BadContext can not overwrite methods already defined in the '\
+        'context chain: [:method1]'
+      )
+    end
+
+    it 'allows overwriting non-public methods' do
+      contextA = TestContext.new
+      other_context_class = Class.new(Context::BaseContext) do
+        def private_method
+          'overwrite'
+        end
+
+        def protected_method
+          'overwrite'
+        end
+      end
+
+      expect { other_context_class.wrap(contextA) }.not_to raise_error
+    end
   end
 
   describe '.decorate is used in conjunction with `wrap` to provide an '\
