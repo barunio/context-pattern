@@ -27,7 +27,11 @@ class TestContext < Context::BaseContext
   end
 
   def bowie
-    'ziggy'
+    "ziggy#{Random.rand}"
+  end
+
+  def random
+    Random.rand
   end
 
   def rolling
@@ -51,6 +55,7 @@ end
 
 class TestContext2 < Context::BaseContext
   decorate :bowie, decorator: TestDecorator
+  decorate :random, decorator: TestDecorator, memoize: true
   decorate :rolling, decorator: TestDecorator, args: [:stones]
 
   attr_accessor :blah
@@ -145,11 +150,13 @@ describe Context::BaseContext do
     let(:instance3) { TestContext3.wrap(instance2) }
 
     it 'works when there are no arguments' do
-      expect(instance.bowie).to eq('ziggy')
+      allow(Random).to receive(:rand).and_return(1)
+
+      expect(instance.bowie).to eq('ziggy1')
 
       decorated = instance2.bowie
       expect(decorated).to be_a(TestDecorator)
-      expect(decorated.decorator_val).to eq('ziggy..')
+      expect(decorated.decorator_val).to eq('ziggy1..')
     end
 
     it 'works when there are arguments supplied to the decorator, with the '\
@@ -159,6 +166,20 @@ describe Context::BaseContext do
       decorated = instance2.rolling
       expect(decorated).to be_a(TestDecorator)
       expect(decorated.decorator_val).to eq('rolling..stones')
+    end
+
+    it 'does not memoize by default' do
+      allow(Random).to receive(:rand).and_return(1, 2, 3)
+
+      expect(instance2.bowie.decorator_val).to eq('ziggy1..')
+      expect(instance2.bowie.decorator_val).to eq('ziggy2..')
+    end
+
+    it 'memoizes when the relevant option is set to true' do
+      allow(Random).to receive(:rand).and_return(1, 2, 3)
+
+      expect(instance2.random.decorator_val).to eq('1..')
+      expect(instance2.random.decorator_val).to eq('1..')
     end
 
     it 'cascades decorated values to contexts down the chain' do
@@ -224,6 +245,7 @@ describe Context::BaseContext do
           :method1 => 'TestContext',
           :method2 => 'TestContext',
           :method3 => 'TestContext',
+          :random => 'TestContext',
           :rolling => 'TestContext',
         }
       )
@@ -233,6 +255,7 @@ describe Context::BaseContext do
     'wrapped context class name as the associated value for those methods' do
       expect(instance2.context_method_mapping).to eq(
         {
+          :_unmemoized_random => 'TestContext2',
           :blah => 'TestContext2',
           :blah= => 'TestContext2',
           :bowie => 'TestContext2',
@@ -241,6 +264,7 @@ describe Context::BaseContext do
           :method1 => 'TestContext',
           :method2 => 'TestContext',
           :method3 => 'TestContext',
+          :random => 'TestContext2',
           :rolling => 'TestContext2'
         }
       )
@@ -249,6 +273,7 @@ describe Context::BaseContext do
     it 'returns the expected values for multiple-wrapped contexts' do
       expect(instance3.context_method_mapping).to eq(
         {
+          :_unmemoized_random => 'TestContext2',
           :alpha => 'TestContext3',
           :blah => 'TestContext2',
           :blah= => 'TestContext2',
@@ -258,6 +283,7 @@ describe Context::BaseContext do
           :method1 => 'TestContext',
           :method2 => 'TestContext',
           :method3 => 'TestContext',
+          :random => 'TestContext2',
           :rolling => 'TestContext2'
         }
       )

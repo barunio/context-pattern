@@ -9,13 +9,15 @@ module Context
     class << self
       include Memoizer
 
-      def decorate(ancestor_context_method, decorator:, args: [])
+      def decorate(ancestor_context_method, decorator:, args: [], memoize: false)
         define_method(ancestor_context_method) do
           decorator.new(
             @parent_context.public_send(ancestor_context_method),
             *(args.map { |arg| instance_eval(arg.to_s) })
           )
         end
+
+        public_send(:memoize, ancestor_context_method) if memoize
       end
 
       def has_view_helper?(method_name)
