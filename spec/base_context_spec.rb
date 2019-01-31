@@ -202,6 +202,33 @@ describe Context::BaseContext do
     end
   end
 
+  describe '#whereis' do
+    let(:instance) { TestContext.new }
+    let(:instance2) { TestContext2.wrap(instance) }
+    let(:instance3) { TestContext3.wrap(instance2) }
+
+    it 'returns the name of the context class in the chain where a method is '\
+    'defined' do
+      expect(instance3.whereis('foo=')).to eq('TestContext')
+      expect(instance3.whereis(:method2)).to eq('TestContext')
+      expect(instance3.whereis('blah')).to eq('TestContext2')
+      expect(instance3.whereis('alpha')).to eq('TestContext3')
+    end
+
+    it 'returns nil if the method is not a public method' do
+      expect(instance.instance_eval('protected_method'))
+        .to eq('protected_method')
+      expect(instance.whereis(:protected_method)).to eq(nil)
+
+      expect(instance.instance_eval('private_method')).to eq('private_method')
+      expect(instance.whereis(:private_method)).to eq(nil)
+    end
+
+    it 'returns nil if the method does not exist' do
+      expect(instance.whereis(:obladiblahda)).to eq(nil)
+    end
+  end
+
   describe 'method_missing' do
     let(:instance) { TestContext.new(foo: 1) }
     let(:instance2) { TestContext2.wrap(instance) }

@@ -63,6 +63,10 @@ module Context
       @parent_context&.respond_to?(method_name, include_private)
     end
 
+    def whereis(method_name)
+      context_method_mapping[method_name.to_sym]
+    end
+
     private
 
     def get_context_method_mapping
