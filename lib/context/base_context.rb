@@ -23,13 +23,9 @@ module Context
       end
     end
 
-    attr_writer :parent_context
+    attr_accessor :parent_context
 
-    def initialize(attributes = nil)
-      self.attributes = attributes if attributes
-    end
-
-    def attributes=(attributes)
+    def initialize(attributes = {})
       attributes.each do |k, v|
         if respond_to?(:"#{k}=")
         then public_send(:"#{k}=", v)
