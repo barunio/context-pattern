@@ -6,11 +6,11 @@ module Context
 
     def extend_context(context, **args)
     context_class = "#{context}Context".constantize
-    @context = context_class.wrap(@context, **args)
+    @__context = context_class.wrap(@__context, **args)
     end
 
     def __set_base_context
-      @context = Context::BaseContext.new
+      @__context = Context::BaseContext.new
     end
   end
 end
