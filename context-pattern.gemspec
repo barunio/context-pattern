@@ -16,7 +16,7 @@ Gem::Specification.new do |s|
   s.extra_rdoc_files = ["README.md", "LICENSE.txt"]
   s.license = 'MIT'
 
-  s.add_dependency('rails', '>= 3.2', '< 5.2')
+  s.add_dependency('rails', '>= 4.0')
   s.add_dependency('memoizer')
 
   s.add_development_dependency('rspec', '~> 3.0')
