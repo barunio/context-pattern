@@ -12,5 +12,19 @@ module Context
     def __set_base_context
       @__context = Context::BaseContext.new
     end
+
+    private
+
+    def method_missing(method_name, *args, &block)
+      if @__context.respond_to?(method_name)
+        @__context.public_send(method_name, *args, &block)
+      else
+        super
+      end
+    end
+
+    def respond_to_missing?(method_name, include_private = false)
+      @__context.respond_to?(method_name, include_private)
+    end
   end
 end
