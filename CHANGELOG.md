@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.1.0]
 * Add method_missing logic to Context::Controller, so that controllers can
   easily access public methods in the context chain
 * Add BaseContextHelper module, which is used to provide views access to
