@@ -1,4 +1,7 @@
 require_relative 'context/base_context'
 require_relative 'context/controller'
 
-require_relative 'context/railtie' if defined?(Rails)
+if defined?(Rails)
+  require_relative 'context/railtie'
+  require_relative 'context/base_context_helper'
+end
