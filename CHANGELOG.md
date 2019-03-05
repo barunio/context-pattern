@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.1.1]
 * Fix naming bug in BaseContextHelper
 
 ## [1.1.0]
