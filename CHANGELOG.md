@@ -1,5 +1,8 @@
 # Changelog
 
+## [Unreleased]
+* Fix naming bug in BaseContextHelper
+
 ## [1.1.0]
 * Add method_missing logic to Context::Controller, so that controllers can
   easily access public methods in the context chain
